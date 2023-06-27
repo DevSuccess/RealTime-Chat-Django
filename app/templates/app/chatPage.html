@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="text-center mt-5">
+        <h1>Hello, Welcome to my Chat Site! {{ request.user }}</h1>
+    </div>
+
+    {% if request.user.is_authenticated %}
+    <div class="text-center mt-3">
+        Logout the Chat Page <a href="{% url 'app:logout-user' %}" class="btn btn-primary">Logout</a>
+    </div>
+    {% endif %}
+
+    <div class="chat__item__container mt-5" id="id_chat_item_container">
+        <div class="input-group">
+            <input type="text" id="id_message_send_input" class="form-control" placeholder="Enter your message">
+            <button id="id_message_send_button" class="btn btn-primary" type="submit">Send Message</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chatSocket = new WebSocket("ws://" + window.location.host + "/");
+    chatSocket.onopen = function (e) {
+        console.log("The connection was set up successfully!");
+    };
+    chatSocket.onclose = function (e) {
+        console.log("Something unexpected happened!");
+    };
+
+    document.querySelector("#id_message_send_input").focus();
+
+    document.querySelector("#id_message_send_input").onkeyup = function (e) {
+        if (e.keyCode === 13) {
+            document.querySelector("#id_message_send_button").click();
+        }
+    };
+
+    document.querySelector("#id_message_send_button").onclick = function (e) {
+        let messageInput = document.querySelector("#id_message_send_input").value;
+        chatSocket.send(JSON.stringify({message: messageInput, username: "{{ request.user.username }}"}));
+    };
+
+    chatSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        let div = document.createElement("div");
+        div.innerHTML = data.username + " : " + data.message;
+        document.querySelector("#id_message_send_input").value = "";
+        document.querySelector("#id_chat_item_container").appendChild(div);
+    };
+</script>
+{% endblock %}
